@@ -1,3 +1,4 @@
+.clang-format
 *.o
 .DS_Store
 *~
@@ -19,6 +20,12 @@ startup_stm32f10x_md_gcc.s
 docs/Manual.pdf
 README.pdf
 
+# LSP related
+/.cache/
+compile_commands.json
+
+# 99 related
+/tmp/
 # artefacts of top-level Makefile
 /downloads/
 /tools/

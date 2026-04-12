@@ -42,6 +42,10 @@ typedef struct autopilotConfig_s {
     uint8_t positionA;
     uint8_t positionCutoff;
     uint8_t maxAngle;
+    uint16_t altChirpAmpl;
+    uint8_t altChirpStartFreqHzDeci;
+    uint16_t altChirpEndFreqHzDeci;
+    uint8_t altChirpSweepTimeSec;
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);

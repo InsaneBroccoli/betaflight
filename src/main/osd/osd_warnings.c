@@ -51,6 +51,7 @@
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
 #include "flight/pid.h"
+#include "flight/alt_hold_multirotor.h"
 #include "flight/pos_hold.h"
 
 #include "io/beeper.h"
@@ -445,6 +446,16 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
         return;
     }
 #endif // USE_CHIRP
+
+#ifdef USE_ALTHOLD_CHIRP
+    // Visual info that chirp excitation is finished
+    if (altHoldChirpIsFinished()) {
+        tfp_sprintf(warningText, "ACHRP EXC FINISHED");
+        *displayAttr = DISPLAYPORT_SEVERITY_INFO;
+        *blinking = true;
+        return;
+    }
+#endif // USE_ALTHOLD_CHIRP
 
 }
 

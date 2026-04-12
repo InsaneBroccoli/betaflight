@@ -89,7 +89,7 @@ typedef enum {
     HEADFREE_MODE   = (1 << 6),
     CHIRP_MODE     = (1 << 7), // old autotune
     PASSTHRU_MODE   = (1 << 8),
-//    RANGEFINDER_MODE= (1 << 9),
+    ALTHOLD_CHIRP_MODE = (1 << 9), // old rangefinder
     FAILSAFE_MODE   = (1 << 10),
     GPS_RESCUE_MODE = (1 << 11)
 } flightModeFlags_e;
@@ -103,16 +103,17 @@ extern uint16_t flightModeFlags;
 // macro to initialize map from boxId_e to log2(flightModeFlags). Keep it in sync with flightModeFlags_e enum.
 // [BOXARM] is left unpopulated
 #define BOXID_TO_FLIGHT_MODE_MAP_INITIALIZER {           \
-   [BOXANGLE]       = LOG2(ANGLE_MODE),                  \
-   [BOXHORIZON]     = LOG2(HORIZON_MODE),                \
-   [BOXMAG]         = LOG2(MAG_MODE),                    \
-   [BOXALTHOLD]     = LOG2(ALT_HOLD_MODE),               \
-   [BOXPOSHOLD]     = LOG2(POS_HOLD_MODE),               \
-   [BOXHEADFREE]    = LOG2(HEADFREE_MODE),               \
-   [BOXCHIRP]       = LOG2(CHIRP_MODE),                  \
-   [BOXPASSTHRU]    = LOG2(PASSTHRU_MODE),               \
-   [BOXFAILSAFE]    = LOG2(FAILSAFE_MODE),               \
-   [BOXGPSRESCUE]   = LOG2(GPS_RESCUE_MODE),             \
+   [BOXANGLE]        = LOG2(ANGLE_MODE),                 \
+   [BOXHORIZON]      = LOG2(HORIZON_MODE),               \
+   [BOXMAG]          = LOG2(MAG_MODE),                   \
+   [BOXALTHOLD]      = LOG2(ALT_HOLD_MODE),              \
+   [BOXPOSHOLD]      = LOG2(POS_HOLD_MODE),              \
+   [BOXHEADFREE]     = LOG2(HEADFREE_MODE),              \
+   [BOXCHIRP]        = LOG2(CHIRP_MODE),                 \
+   [BOXALTHOLDCHIRP] = LOG2(ALTHOLD_CHIRP_MODE),                 \
+   [BOXPASSTHRU]     = LOG2(PASSTHRU_MODE),              \
+   [BOXFAILSAFE]     = LOG2(FAILSAFE_MODE),              \
+   [BOXGPSRESCUE]    = LOG2(GPS_RESCUE_MODE),            \
 }                                                        \
 /**/
 

@@ -176,6 +176,10 @@
 #define PARAM_NAME_AP_POSITION_A "ap_position_a"
 #define PARAM_NAME_AP_POSITION_CUTOFF "ap_position_cutoff"
 #define PARAM_NAME_AP_MAX_ANGLE "ap_max_angle"
+#define PARAM_NAME_AP_ALT_CHIRP_AMPL "ap_alt_chirp_ampl"
+#define PARAM_NAME_AP_ALT_CHIRP_START_FREQ_HZ_DECI "ap_alt_chirp_start_freq_hz_deci"
+#define PARAM_NAME_AP_ALT_CHIRP_END_FREQ_HZ_DECI "ap_alt_chirp_end_freq_hz_deci"
+#define PARAM_NAME_AP_ALT_CHIRP_SWEEP_TIME_SEC "ap_alt_chirp_sweep_time_sec"
 
 #define PARAM_NAME_ANGLE_FEEDFORWARD "angle_feedforward"
 #define PARAM_NAME_ANGLE_FF_SMOOTHING_MS "angle_feedforward_smoothing_ms"

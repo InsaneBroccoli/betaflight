@@ -92,3 +92,33 @@ bool chirpUpdate(chirp_t *chirp)
         return true;
     }
 }
+
+// update the altitude chirp signal generator
+bool altChirpUpdate(chirp_t *chirp)
+{
+    if (chirp->isFinished) {
+
+        return false;
+
+    } else if (chirp->count == chirp->N) {
+
+        chirp->isFinished = true;
+        chirpResetSignals(chirp);
+        return false;
+
+    } else {
+
+        chirp->fchirp = chirp->f0 * pow_approx(chirp->beta, (float)(chirp->count) * chirp->Ts);
+        chirp->sinarg = chirp->k0 * chirp->fchirp - chirp->k1;
+
+        // wrap sinarg to 0...2*pi
+        chirp->sinarg = fmodf(chirp->sinarg, 2.0f * M_PIf);
+
+        // use sine for altitude (no integral relationship like gyro->angle)
+        chirp->exc = sin_approx(chirp->sinarg);
+
+        chirp->count++;
+
+        return true;
+    }
+}

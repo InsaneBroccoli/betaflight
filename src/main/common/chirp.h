@@ -35,3 +35,4 @@ void chirpInit(chirp_t *chirp, const float f0, const float f1, const float t1, c
 void chirpReset(chirp_t *chirp);
 void chirpResetSignals(chirp_t *chirp);
 bool chirpUpdate(chirp_t *chirp);
+bool altChirpUpdate(chirp_t *chirp);

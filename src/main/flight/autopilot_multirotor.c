@@ -179,6 +179,9 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     // increase D when velocity is high, typically when initiating hold at high vertical speeds
     // 1.0 when less than 5 m/s, 2x at 10m/s, 2.5 at 20 m/s, 2.8 at 50 m/s, asymptotes towards max 3.0.
     float dBoost = 1.0f;
+#ifdef USE_ALTHOLD_CHIRP
+    if (!FLIGHT_MODE(ALTHOLD_CHIRP_MODE))
+#endif
     {
         const float startValue = 500.0f; // velocity at which D should start to increase
         const float altDeriv = fabsf(verticalVelocityCmS);
@@ -215,6 +218,9 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeI));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(-altitudeD));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
+    DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 5, lrintf(throttleOut * 1000));
+    DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 6, lrintf(verticalVelocityCmS * 10));
+    DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 7, lrintf(altitudeP + altitudeI - altitudeD + altitudeF));
 }
 
 void setSticksActiveStatus(bool areSticksActive)

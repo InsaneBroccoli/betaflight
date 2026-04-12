@@ -30,6 +30,10 @@ void altHoldInit(void);
 void updateAltHold(timeUs_t currentTimeUs);
 bool isAltHoldActive(void);
 
+#ifdef USE_ALTHOLD_CHIRP
+bool altHoldChirpIsFinished(void);
+#endif
+
 #endif
 
 #endif // !USE_WING

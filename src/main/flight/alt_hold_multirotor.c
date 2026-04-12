@@ -15,6 +15,7 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "pg/autopilot_multirotor.h"
 #include "platform.h"
 
 #ifndef USE_WING
@@ -39,6 +40,10 @@
 
 #include "alt_hold.h"
 
+#ifdef USE_ALTHOLD_CHIRP
+#include "common/chirp.h"    // chirp_t, chirpInit, chirpUpdate, chirpReset
+#endif
+
 static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); // i.e. 0.01 s
 
 typedef struct {
@@ -51,6 +56,11 @@ typedef struct {
 } altHoldState_t;
 
 altHoldState_t altHold;
+
+#ifdef USE_ALTHOLD_CHIRP
+chirp_t altChirp;
+static float altChirpBaseAltitudeCm = 0.0f;
+#endif
 
 static void altHoldReset(void)
 {
@@ -65,6 +75,13 @@ void altHoldInit(void)
     altHold.deadband = altHoldConfig()->deadband / 100.0f;
     altHold.allowStickAdjustment = altHoldConfig()->deadband;
     altHold.maxVelocity = altHoldConfig()->climbRate * 10.0f; // 50 in CLI means 500cm/s
+#ifdef USE_ALTHOLD_CHIRP
+    chirpInit(&altChirp,
+              autopilotConfig()->altChirpStartFreqHzDeci / 10.0f,
+              autopilotConfig()->altChirpEndFreqHzDeci / 10.0f,
+              autopilotConfig()->altChirpSweepTimeSec,
+              taskIntervalSeconds * 1000000);
+#endif
     altHoldReset();
 }
 
@@ -128,6 +145,8 @@ static void altHoldUpdateTargetAltitude(void)
     // using maxVelocity means the stick can bring altitude target to current within 1s
     // this constrains the P and I response to user target changes, but not D of F responses
     // Range is compared to distance that might be traveled in one second
+
+
     if (fabsf(getAltitudeCm() - altHold.targetAltitudeCm) < altHold.maxVelocity * 1.0f /* s */) {
         altHold.targetAltitudeCm += altHold.targetVelocity * taskIntervalSeconds;
     }
@@ -139,6 +158,22 @@ static void altHoldUpdate(void)
     if (altHoldConfig()->climbRate) {
         altHoldUpdateTargetAltitude();
     }
+#ifdef USE_ALTHOLD_CHIRP
+    if (FLIGHT_MODE(ALTHOLD_CHIRP_MODE)) {
+        if (altChirp.count == 0 && !altChirp.isFinished) {
+            altChirpBaseAltitudeCm = altHold.targetAltitudeCm;
+        }
+        altChirpUpdate(&altChirp);
+        altHold.targetAltitudeCm = altChirpBaseAltitudeCm + autopilotConfig()->altChirpAmpl * altChirp.exc;
+        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 0, lrintf(5.0e3f * altChirp.sinarg));
+        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 1, lrintf(altChirp.exc * 1000));
+        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 2, lrintf(altChirp.fchirp * 100));
+        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 3, lrintf(getAltitudeCm() - altChirpBaseAltitudeCm));
+        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 4, lrintf(altHold.targetAltitudeCm - altChirpBaseAltitudeCm));
+    } else {
+        chirpReset(&altChirp);
+    }
+#endif
     altitudeControl(altHold.targetAltitudeCm, taskIntervalSeconds, altHold.targetVelocity);
 }
 
@@ -156,6 +191,13 @@ void updateAltHold(timeUs_t currentTimeUs) {
 bool isAltHoldActive(void) {
     return altHold.isActive;
 }
+
+#ifdef USE_ALTHOLD_CHIRP
+bool altHoldChirpIsFinished(void) {
+    return altChirp.isFinished;
+}
+#endif
+
 #endif
 
 #endif // !USE_WING
