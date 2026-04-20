@@ -218,6 +218,8 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 5, lrintf(altitudeI));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 6, lrintf(-altitudeD));
     DEBUG_SET(DEBUG_AUTOPILOT_ALTITUDE, 7, lrintf(altitudeF));
+    DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 3, lrintf(altitudeP + altitudeI));
+    DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 4, lrintf(altitudeD));
     DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 5, lrintf(throttleOut * 1000));
     DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 6, lrintf(verticalVelocityCmS * 10));
     DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 7, lrintf(altitudeP + altitudeI - altitudeD + altitudeF));

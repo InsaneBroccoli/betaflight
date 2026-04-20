@@ -166,10 +166,8 @@ static void altHoldUpdate(void)
         altChirpUpdate(&altChirp);
         altHold.targetAltitudeCm = altChirpBaseAltitudeCm + autopilotConfig()->altChirpAmpl * altChirp.exc;
         DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 0, lrintf(5.0e3f * altChirp.sinarg));
-        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 1, lrintf(altChirp.exc * 1000));
-        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 2, lrintf(altChirp.fchirp * 100));
-        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 3, lrintf(getAltitudeCm() - altChirpBaseAltitudeCm));
-        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 4, lrintf(altHold.targetAltitudeCm - altChirpBaseAltitudeCm));
+        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 1, lrintf(getAltitudeCm() - altChirpBaseAltitudeCm));
+        DEBUG_SET(DEBUG_ALTHOLD_CHIRP, 2, lrintf(altHold.targetAltitudeCm - altChirpBaseAltitudeCm));
     } else {
         chirpReset(&altChirp);
     }
