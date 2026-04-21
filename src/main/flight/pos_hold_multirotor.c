@@ -37,6 +37,7 @@
 #include "sensors/compass.h"
 
 #include "pg/pos_hold.h"
+#include "pg/autopilot_multirotor.h"
 #include "pos_hold.h"
 
 typedef struct posHoldState_s {
@@ -131,7 +132,7 @@ void updatePosHold(timeUs_t currentTimeUs) {
             posChirpBasePositionCm[Y] = posHold.targetPositionCm[Y];
         }
 
-        chirpUpdate(&posChirp); // Use standard chirpUpdate which outputs chirp->exc
+        posChirpUpdate(&posChirp);
 
         float currentExcitation = autopilotConfig()->posChirpAmpl * posChirp.exc;
 
