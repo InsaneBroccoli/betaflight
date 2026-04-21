@@ -275,7 +275,7 @@ bool positionControl(void)
                 chirpReset(&posChirp);
             }
 
-            chirpUpdate(&posChirp);
+            posChirpUpdate(&posChirp);
 
             float currentExcitation = autopilotConfig()->posChirpAmpl * posChirp.exc;
 

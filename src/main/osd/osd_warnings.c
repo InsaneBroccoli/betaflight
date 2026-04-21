@@ -50,6 +50,7 @@
 #include "flight/imu.h"
 #include "flight/mixer.h"
 #include "flight/mixer_init.h"
+#include "flight/autopilot_multirotor.h"
 #include "flight/pid.h"
 #include "flight/pos_hold.h"
 

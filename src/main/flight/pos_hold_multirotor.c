@@ -54,15 +54,6 @@ void posHoldInit(void)
     posHold.deadband = posHoldConfig()->deadband * 0.01f;
     posHold.useStickAdjustment = posHoldConfig()->deadband;
 
-#ifdef USE_POSHOLD_CHIRP
-    chirpInit(&posChirp,
-              autopilotConfig()->posChirpStartFreqHzDeci / 10.0f,
-              autopilotConfig()->posChirpEndFreqHzDeci / 10.0f,
-              autopilotConfig()->posChirpSweepTimeSec,
-              HZ_TO_INTERVAL(POSHOLD_TASK_RATE_HZ) * 1000000);
-    posChirpAxisY = false;
-#endif
-
 }
 
 static void posHoldCheckSticks(void)
@@ -114,12 +105,6 @@ bool posHoldFailure(void) {
     // used only to display warning in OSD if requested but failing
     return FLIGHT_MODE(POS_HOLD_MODE) && (!posHold.isControlOk || !posHold.areSensorsOk);
 }
-
-#ifdef USE_POSHOLD_CHIRP
-bool posHoldChirpIsFinished(void) {
-    return posChirp.isFinished;
-}
-#endif
 
 #endif // USE_POSITION_HOLD
 

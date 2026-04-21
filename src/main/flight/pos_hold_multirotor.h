@@ -32,10 +32,6 @@ void updatePosHold(timeUs_t currentTimeUs);
 
 bool posHoldFailure(void);
 
-#ifdef USE_POSHOLD_CHIRP
-bool posHoldChirpIsFinished(void);
-#endif
-
 #endif // USE_POSITION_HOLD
 
 #endif // !USE_WING
