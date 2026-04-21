@@ -2044,6 +2044,12 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_POSITION_A,          VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 200 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, positionA) },
     { PARAM_NAME_AP_POSITION_CUTOFF,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 250 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, positionCutoff) },
     { PARAM_NAME_AP_MAX_ANGLE,           VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 70 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, maxAngle) },
+  #ifdef USE_POSHOLD_CHIRP
+    { PARAM_NAME_AP_POS_CHIRP_AMPL,                VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 6000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpAmpl) },
+    { PARAM_NAME_AP_POS_CHIRP_START_FREQ_HZ_DECI,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpStartFreqHzDeci) },
+    { PARAM_NAME_AP_POS_CHIRP_END_FREQ_HZ_DECI,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 2, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpEndFreqHzDeci) },
+    { PARAM_NAME_AP_POS_CHIRP_SWEEP_TIME_SEC,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpSweepTimeSec) },
+  #endif
 #endif // !USE_WING
 
 // PG_MODE_ACTIVATION_CONFIG

@@ -1109,6 +1109,19 @@ void processRxModes(timeUs_t currentTimeUs)
     }
 #endif
 
+#ifdef USE_POSHOLD_CHIRP
+    if (IS_RC_MODE_ACTIVE(BOXPOSHOLDCHIRP) 
+        && FLIGHT_MODE(POS_HOLD_MODE)
+        && !FLIGHT_MODE(FAILSAFE_MODE) 
+        && !FLIGHT_MODE(GPS_RESCUE_MODE)) {
+        if (!FLIGHT_MODE(POSHOLD_CHIRP_MODE)) {
+            ENABLE_FLIGHT_MODE(POSHOLD_CHIRP_MODE);
+        }
+    } else {
+        DISABLE_FLIGHT_MODE(POSHOLD_CHIRP_MODE);
+    }
+#endif
+
     if (FLIGHT_MODE(ANGLE_MODE | ALT_HOLD_MODE | POS_HOLD_MODE | HORIZON_MODE)) {
         LED1_ON;
         // increase frequency of attitude task to reduce drift when in angle or horizon mode
