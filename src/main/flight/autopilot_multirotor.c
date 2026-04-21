@@ -50,6 +50,12 @@
 #define POSITION_A_SCALE  0.0008f
 #define UPSAMPLING_CUTOFF_HZ 5.0f
 
+#ifdef USE_POSHOLD_CHIRP
+#include "common/chirp.h"
+chirp_t posChirp;
+static bool posChirpAxisY = false;
+#endif
+
 static pidCoefficient_t altitudePidCoeffs;
 static pidCoefficient_t positionPidCoeffs;
 
@@ -131,6 +137,16 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
         // clear anything stored in the filter at first call
         resetEFAxisParams(&ap.efAxis[i], 1.0f);
     }
+
+#ifdef USE_POSHOLD_CHIRP
+    chirpInit(&posChirp,
+              autopilotConfig()->posChirpStartFreqHzDeci / 10.0f,
+              autopilotConfig()->posChirpEndFreqHzDeci / 10.0f,
+              autopilotConfig()->posChirpSweepTimeSec,
+              (uint32_t)(1000000.0f / taskRateHz)); // convert Hz to looptime in microseconds
+    posChirpAxisY = false; // Always start with LON (X/East) axis when position hold is activated
+#endif
+
     const float taskInterval = 1.0f / taskRateHz;
     ap.upsampleLpfGain = pt3FilterGain(UPSAMPLING_CUTOFF_HZ, taskInterval); // 5Hz; normally at 100Hz task rate
     resetUpsampleFilters(); // clear accumlator from previous iterations
@@ -245,6 +261,44 @@ bool positionControl(void)
         // get lat and long distances from current location (gpsSol.llh) to target location
         vector2_t gpsDistance;
         GPS_distance2d(&gpsSol.llh, &ap.targetLocation, &gpsDistance); // X is EW/lon, Y is NS/lat
+
+#ifdef USE_POSHOLD_CHIRP
+        static bool wasPosChirpActive = false;
+        bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
+
+        if (isPosChirpActive) {
+            // Toggle axis if we re-activate the switch
+            if (!wasPosChirpActive) {
+                if (posChirp.isFinished) {
+                    posChirpAxisY = !posChirpAxisY; // Switch to the other axis on next toggle
+                }
+                chirpReset(&posChirp);
+            }
+
+            chirpUpdate(&posChirp);
+
+            float currentExcitation = autopilotConfig()->posChirpAmpl * posChirp.exc;
+
+            // Apply excitation directly to the distance error (in cm)
+            // This tricks the PID controller into thinking the drone is off-target,
+            // forcing it to move the quad to trace your chirp wave!
+            if (!posChirpAxisY) {
+                gpsDistance.v[LON] += currentExcitation;
+            } else {
+                gpsDistance.v[LAT] += currentExcitation;
+            }
+
+            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, posChirpAxisY ? 1 : 0); // 0 = LON/X, 1 = LAT/Y
+            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(currentExcitation));
+            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(posChirp.fchirp * 100));
+        } else {
+            if (wasPosChirpActive) {
+                chirpReset(&posChirp);
+            }
+        }
+        wasPosChirpActive = isPosChirpActive;
+#endif
+
         debugGpsDistance = gpsDistance;
         const float distanceNormCm = vector2Norm(&gpsDistance);
 
@@ -397,5 +451,11 @@ bool isAutopilotInControl(void)
 {
     return !ap.sticksActive;
 }
+
+#ifdef USE_POSHOLD_CHIRP
+bool posHoldChirpIsFinished(void) {
+    return posChirp.isFinished;
+}
+#endif
 
 #endif // !USE_WING

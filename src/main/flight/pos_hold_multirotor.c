@@ -37,7 +37,6 @@
 #include "sensors/compass.h"
 
 #include "pg/pos_hold.h"
-#include "pg/autopilot_multirotor.h"
 #include "pos_hold.h"
 
 typedef struct posHoldState_s {
@@ -49,13 +48,6 @@ typedef struct posHoldState_s {
 } posHoldState_t;
 
 static posHoldState_t posHold;
-
-#ifdef USE_POSHOLD_CHIRP
-#include "common/chirp.h"
-chirp_t posChirp;
-static bool posChirpAxisY = false;
-static float posChirpBasePositionCm[2] = {0.0f, 0.0f};
-#endif
 
 void posHoldInit(void)
 {
@@ -116,42 +108,6 @@ void updatePosHold(timeUs_t currentTimeUs) {
             posHold.isControlOk = positionControl(); // false only on sanity check failure
         }
     }
-
-#ifdef USE_POSHOLD_CHIRP
-    static bool wasPosChirpActive = false;
-    bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
-
-    if (isPosChirpActive) {
-        // Toggle axis if we re-activate the switch
-        if (!wasPosChirpActive) {
-            if (posChirp.isFinished) {
-                posChirpAxisY = !posChirpAxisY; // Switch to Y axis on next toggle
-            }
-            chirpReset(&posChirp);
-            posChirpBasePositionCm[X] = posHold.targetPositionCm[X]; // Store base
-            posChirpBasePositionCm[Y] = posHold.targetPositionCm[Y];
-        }
-
-        posChirpUpdate(&posChirp);
-
-        float currentExcitation = autopilotConfig()->posChirpAmpl * posChirp.exc;
-
-        if (!posChirpAxisY) {
-            posHold.targetPositionCm[X] = posChirpBasePositionCm[X] + currentExcitation;
-        } else {
-            posHold.targetPositionCm[Y] = posChirpBasePositionCm[Y] + currentExcitation;
-        }
-
-        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, posChirpAxisY ? 1 : 0); // 0 = X, 1 = Y
-        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(currentExcitation));
-        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(posChirp.fchirp * 100));
-    } else {
-        if (wasPosChirpActive) {
-            chirpReset(&posChirp);
-        }
-    }
-    wasPosChirpActive = isPosChirpActive;
-#endif
 }
 
 bool posHoldFailure(void) {
