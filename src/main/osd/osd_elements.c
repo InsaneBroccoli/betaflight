@@ -1099,7 +1099,7 @@ static void osdElementFlymode(osdElementParms_t *element)
     //  1. FS
     //  2. GPS RESCUE
     //  3. PASSTHRU
-    //  4. HEAD, POSHOLD, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
+    //  4. HEAD, POSHOLD, POSHOLDCHIRP, ALTHOLD, ANGLE, HORIZON, ACRO TRAINER
     //  5. AIR
     //  6. ACRO
 
