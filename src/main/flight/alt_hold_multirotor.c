@@ -77,7 +77,7 @@ void altHoldInit(void)
     altHold.maxVelocity = altHoldConfig()->climbRate * 10.0f; // 50 in CLI means 500cm/s
 #ifdef USE_ALTHOLD_CHIRP
     chirpInit(&altChirp,
-              autopilotConfig()->altChirpStartFreqHzDeci / 10.0f,
+              autopilotConfig()->altChirpStartFreqHzCenti / 100.0f,
               autopilotConfig()->altChirpEndFreqHzDeci / 10.0f,
               autopilotConfig()->altChirpSweepTimeSec,
               taskIntervalSeconds * 1000000);

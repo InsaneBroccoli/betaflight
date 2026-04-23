@@ -2046,7 +2046,7 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_MAX_ANGLE,                     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 10, 70 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, maxAngle) },
   #ifdef USE_ALTHOLD_CHIRP
     { PARAM_NAME_AP_ALT_CHIRP_AMPL,                VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 1, 6000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, altChirpAmpl) },
-    { PARAM_NAME_AP_ALT_CHIRP_START_FREQ_HZ_DECI,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altChirpStartFreqHzDeci) },
+    { PARAM_NAME_AP_ALT_CHIRP_START_FREQ_HZ_CENTI,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altChirpStartFreqHzCenti) },
     { PARAM_NAME_AP_ALT_CHIRP_END_FREQ_HZ_DECI,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 2, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, altChirpEndFreqHzDeci) },
     { PARAM_NAME_AP_ALT_CHIRP_SWEEP_TIME_SEC,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, altChirpSweepTimeSec) },
   #endif
