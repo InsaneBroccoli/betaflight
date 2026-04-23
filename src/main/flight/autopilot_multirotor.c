@@ -171,7 +171,11 @@ void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAl
     const float altitudeP = altitudeErrorCm * altitudePidCoeffs.Kp;
 
     // reduce the iTerm gain for errors greater than 200cm (2m), otherwise it winds up too much
-    const float itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;
+    float itermRelax = 1.0f;
+#ifdef USE_ALTHOLD_CHIRP 
+    if (!FLIGHT_MODE(ALTHOLD_CHIRP_MODE))
+#endif
+    {itermRelax = (fabsf(altitudeErrorCm) < 200.0f) ? 1.0f : 0.1f;}
     altitudeI += altitudeErrorCm * altitudePidCoeffs.Ki * itermRelax * taskIntervalS;
     // limit iTerm to not more than 200 throttle units
     altitudeI = constrainf(altitudeI, -200.0f, 200.0f);
