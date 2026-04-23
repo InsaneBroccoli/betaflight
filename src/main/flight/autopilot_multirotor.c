@@ -254,6 +254,31 @@ bool positionControl(void)
     static vector2_t debugGpsDistance = { 0 };     // keep last calculated distance for DEBUG
     static vector2_t debugPidSumEF = { 0 };        // and last pidsum in EF
     static uint16_t gpsStamp = 0;
+
+#ifdef USE_POSHOLD_CHIRP
+    // Run chirp at task rate so its time base matches the looptime passed to chirpInit
+    // (gpsHasNewData below fires at GPS rate, which would stretch the sweep by ~10x)
+    static bool wasPosChirpActive = false;
+    const bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
+
+    if (isPosChirpActive) {
+        if (!wasPosChirpActive) {
+            if (posChirp.isFinished) {
+                posChirpAxisY = !posChirpAxisY; // alternate axis on each re-activation
+            }
+            chirpReset(&posChirp);
+        }
+        posChirpUpdate(&posChirp);
+
+        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, posChirpAxisY ? 1 : 0); // 0 = LON/X, 1 = LAT/Y
+        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(autopilotConfig()->posChirpAmpl * posChirp.exc));
+        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(posChirp.fchirp * 100));
+    } else if (wasPosChirpActive) {
+        chirpReset(&posChirp);
+    }
+    wasPosChirpActive = isPosChirpActive;
+#endif
+
     if (gpsHasNewData(&gpsStamp)) {
         const float gpsDataInterval = getGpsDataIntervalSeconds(); // interval for current GPS data value 0.05 - 2.5s
         const float gpsDataFreq = getGpsDataFrequencyHz();
@@ -263,40 +288,15 @@ bool positionControl(void)
         GPS_distance2d(&gpsSol.llh, &ap.targetLocation, &gpsDistance); // X is EW/lon, Y is NS/lat
 
 #ifdef USE_POSHOLD_CHIRP
-        static bool wasPosChirpActive = false;
-        bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
-
         if (isPosChirpActive) {
-            // Toggle axis if we re-activate the switch
-            if (!wasPosChirpActive) {
-                if (posChirp.isFinished) {
-                    posChirpAxisY = !posChirpAxisY; // Switch to the other axis on next toggle
-                }
-                chirpReset(&posChirp);
-            }
-
-            posChirpUpdate(&posChirp);
-
-            float currentExcitation = autopilotConfig()->posChirpAmpl * posChirp.exc;
-
-            // Apply excitation directly to the distance error (in cm)
-            // This tricks the PID controller into thinking the drone is off-target,
-            // forcing it to move the quad to trace your chirp wave!
+            // Apply latest excitation to the distance error so the PID chases the chirp wave
+            const float currentExcitation = autopilotConfig()->posChirpAmpl * posChirp.exc;
             if (!posChirpAxisY) {
                 gpsDistance.v[LON] += currentExcitation;
             } else {
                 gpsDistance.v[LAT] += currentExcitation;
             }
-
-            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, posChirpAxisY ? 1 : 0); // 0 = LON/X, 1 = LAT/Y
-            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(currentExcitation));
-            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(posChirp.fchirp * 100));
-        } else {
-            if (wasPosChirpActive) {
-                chirpReset(&posChirp);
-            }
         }
-        wasPosChirpActive = isPosChirpActive;
 #endif
 
         debugGpsDistance = gpsDistance;

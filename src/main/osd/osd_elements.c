@@ -1111,12 +1111,12 @@ static void osdElementFlymode(osdElementParms_t *element)
         strcpy(element->buff, "HEAD");
     } else if (FLIGHT_MODE(PASSTHRU_MODE)) {
         strcpy(element->buff, "PASS");
-    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
-        strcpy(element->buff, "POSH");
   #ifdef USE_POSHOLD_CHIRP
     } else if (FLIGHT_MODE(POSHOLD_CHIRP_MODE)) {
         strcpy(element->buff, "PCHR");
   #endif
+    } else if (FLIGHT_MODE(POS_HOLD_MODE)) {
+        strcpy(element->buff, "POSH");
     } else if (FLIGHT_MODE(ALT_HOLD_MODE)) {
         strcpy(element->buff, "ALTH");
     } else if (FLIGHT_MODE(ANGLE_MODE)) {
