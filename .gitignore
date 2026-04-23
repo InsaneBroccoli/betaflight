@@ -1,3 +1,6 @@
+# env
+.env
+
 .clang-format
 *.o
 .DS_Store
