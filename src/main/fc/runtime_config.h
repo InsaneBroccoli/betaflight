@@ -84,8 +84,7 @@ typedef enum {
     HORIZON_MODE    = (1 << 1),
     MAG_MODE        = (1 << 2),
     ALT_HOLD_MODE    = (1 << 3),
-//    GPS_HOME_MODE   = (1 << 4),
-    POSHOLD_CHIRP_MODE = (1 << 4),
+    POSHOLD_CHIRP_MODE = (1 << 4), // old GPS_HOME_MODE
     POS_HOLD_MODE   = (1 << 5),
     HEADFREE_MODE   = (1 << 6),
     CHIRP_MODE     = (1 << 7), // old autotune
