@@ -52,6 +52,8 @@
 
 #ifdef USE_POSHOLD_CHIRP
 #include "common/chirp.h"
+#include "flight/imu.h"       // For attitude.values.yaw
+#include "fc/rc.h"            // For rcCommand[YAW]
 chirp_t posChirp;
 static bool posChirpAxisY = false;
 #endif
@@ -256,27 +258,54 @@ bool positionControl(void)
     static uint16_t gpsStamp = 0;
 
 #ifdef USE_POSHOLD_CHIRP
-    // Run chirp at task rate so its time base matches the looptime passed to chirpInit
-    // (gpsHasNewData below fires at GPS rate, which would stretch the sweep by ~10x)
-    static bool wasPosChirpActive = false;
+    static bool shouldPosChirpAxisToggle = false;
+    static bool isAlignedToNorth = false;
     const bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
 
     if (isPosChirpActive) {
-        if (!wasPosChirpActive) {
-            if (posChirp.isFinished) {
-                posChirpAxisY = !posChirpAxisY; // alternate axis on each re-activation
+        if (!shouldPosChirpAxisToggle) {
+            // First time entering the mode (or after toggle)
+            shouldPosChirpAxisToggle = true; 
+            isAlignedToNorth = false; // Require alignment on every new activation
+        }
+
+        if (!isAlignedToNorth) {
+            // 1. Calculate heading error to North (0 degrees)
+            int16_t heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+            int16_t error = 0 - heading;
+            
+            // Normalize error to -180 to +180
+            if (error <= -180) error += 360;
+            if (error >= 180)  error -= 360;
+
+            // 2. Check if we are close enough to North (e.g., within 3 degrees)
+            if (abs(error) <= 3) {
+                isAlignedToNorth = true;
+                chirpReset(&posChirp);  // Reset chirp to cleanly start at t=0
+            } else {
+                // 3. Command the drone to yaw towards North (Simple Proportional Controller)
+                // The multiplier acts as P-gain. Adjust '3' if it rotates too slow/fast
+                rcCommand[YAW] = error * 3; 
             }
+        }
+
+        // Only execute the chirp generator if we have finished aligning
+        if (isAlignedToNorth) {
+            posChirpUpdate(&posChirp);
+
+            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, posChirpAxisY ? 1 : 0); // 0 = LON/X, 1 = LAT/Y
+            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(autopilotConfig()->posChirpAmpl * posChirp.exc));
+            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(posChirp.fchirp * 100));
+        }
+    } else {
+        if (shouldPosChirpAxisToggle) {
+            // The switch was just turned off: toggle the axis and reset generator
+            shouldPosChirpAxisToggle = false;
+            posChirpAxisY = !posChirpAxisY; 
+            isAlignedToNorth = false; 
             chirpReset(&posChirp);
         }
-        posChirpUpdate(&posChirp);
-
-        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, posChirpAxisY ? 1 : 0); // 0 = LON/X, 1 = LAT/Y
-        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(autopilotConfig()->posChirpAmpl * posChirp.exc));
-        DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(posChirp.fchirp * 100));
-    } else if (wasPosChirpActive) {
-        chirpReset(&posChirp);
     }
-    wasPosChirpActive = isPosChirpActive;
 #endif
 
     if (gpsHasNewData(&gpsStamp)) {
@@ -425,6 +454,39 @@ bool positionControl(void)
         // note: upsampling should really be done in earth frame, to avoid 10Hz wobbles if pilot yaws and the controller is applying significant pitch or roll
         autopilotAngle[i] = pt3FilterApply(&ap.upsampleLpfBF[i], ap.pidSumBF.v[i]);
     }
+
+#ifdef USE_POSHOLD_CHIRP
+    // Because the drone aligns to North, LON (East/West) maps to ROLL, and LAT (North/South) maps to PITCH.
+    // We dynamically select the active axis based on what the chirp generator is targeting.
+    axisEF_e activeEFAxis = posChirpAxisY ? LAT : LON;
+    int activeBFAxis = posChirpAxisY ? AI_PITCH : AI_ROLL;
+
+    // 0: GPS_Distance (Error to target in cm)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(debugGpsDistance.v[activeEFAxis]));
+
+    // 1: PID_sum (Combined P+I+D+A before vector rotation, Earth Frame)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(debugPidSumEF.v[activeEFAxis] * 10)); // *10 for extra precision
+
+    // 2: angles BF (Output of Vector Rotate AND Limiter, Body Frame, before PT3)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(ap.pidSumBF.v[activeBFAxis] * 10)); // decidegrees
+
+    // 3: angle_target (Final output after PT3 filter, sent to the drone's angle PID controller)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 3, lrintf(autopilotAngle[activeBFAxis] * 10)); // decidegrees
+
+    // 4: current Angle (The physical attitude of the drone from the IMU)
+    float currentAngleDeciDegrees = (activeBFAxis == AI_ROLL) ? attitude.values.roll : attitude.values.pitch;
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(currentAngleDeciDegrees)); // already in decidegrees
+
+    // 5: error (angle_target - current Angle)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 5, lrintf((autopilotAngle[activeBFAxis] * 10) - currentAngleDeciDegrees));
+
+    // 6: The injected Chirp Excitation (so you can see the actual wave pushing the system)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 6, lrintf(autopilotConfig()->posChirpAmpl * posChirp.exc));
+
+    // 7: Active Axis Flag (0 = LON/ROLL, 1 = LAT/PITCH) so you know which axis you are looking at in the log
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, posChirpAxisY ? 1 : 0);
+#endif
+
 
     if (debugAxis < 2) {
         // this is different from @ctzsnooze version
