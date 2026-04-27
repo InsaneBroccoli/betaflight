@@ -47,9 +47,9 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .positionA = 30,
     .positionCutoff = 80,
     .maxAngle = 50,
-    .posChirpAmpl = 250,
+    .posChirpAmpl = 200,
     .posChirpStartFreqHzDeci = 1,
-    .posChirpEndFreqHzDeci = 100,
+    .posChirpEndFreqHzDeci = 40,
     .posChirpSweepTimeSec = 63,
 );
 

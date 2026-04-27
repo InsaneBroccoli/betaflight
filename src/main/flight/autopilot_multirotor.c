@@ -269,33 +269,26 @@ bool positionControl(void)
             isAlignedToNorth = false; // Require alignment on every new activation
         }
 
-        if (!isAlignedToNorth) {
-            // 1. Calculate heading error to North (0 degrees)
-            int16_t heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-            int16_t error = 0 - heading;
-            
-            // Normalize error to -180 to +180
-            if (error <= -180) error += 360;
-            if (error >= 180)  error -= 360;
+        // 1. Calculate heading error to North (0 degrees)
+        int16_t heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
+        int16_t error = 0 - heading;
+        
+        // Normalize error to -180 to +180
+        if (error <= -180) error += 360;
+        if (error >= 180)  error -= 360;
 
-            // 2. Check if we are close enough to North (e.g., within 3 degrees)
-            if (abs(error) <= 3) {
-                isAlignedToNorth = true;
-                chirpReset(&posChirp);  // Reset chirp to cleanly start at t=0
-            } else {
-                // 3. Command the drone to yaw towards North (Simple Proportional Controller)
-                // The multiplier acts as P-gain. Adjust '3' if it rotates too slow/fast
-                rcCommand[YAW] = error * 3; 
-            }
+        // 2. Check if we are close enough to North (within 3 degrees)
+        if ((abs(error) <= 3) && (isAlignedToNorth == false)) {
+            isAlignedToNorth = true;
+            chirpReset(&posChirp);  // Reset chirp to cleanly start at t=0
         }
+        // 3. Command the drone to yaw towards North (Simple Proportional Controller)
+        // The multiplier acts as P-gain. Adjust '3' if it rotates too slow/fast
+        rcCommand[YAW] = error * 3;
 
         // Only execute the chirp generator if we have finished aligning
         if (isAlignedToNorth) {
             posChirpUpdate(&posChirp);
-
-            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, posChirpAxisY ? 1 : 0); // 0 = LON/X, 1 = LAT/Y
-            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(autopilotConfig()->posChirpAmpl * posChirp.exc));
-            DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(posChirp.fchirp * 100));
         }
     } else {
         if (shouldPosChirpAxisToggle) {
