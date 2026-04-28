@@ -454,22 +454,21 @@ bool positionControl(void)
     axisEF_e activeEFAxis = posChirpAxisY ? LAT : LON;
     int activeBFAxis = posChirpAxisY ? AI_PITCH : AI_ROLL;
 
-    // 0: target GPS location
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(ap.targetLocation));
+    // 0: current GPS location LAT
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(gpsSol.llh.lat));
 
-    // 1: current GPS position
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(gpsSol.llh));
+    // 1: current GPS location LON
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(gpsSol.llh.lon));
 
-    // 2: PID_sum (Combined P+I+D+A before vector rotation, Earth Frame)
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(debugPidSumEF.v[activeEFAxis] * 10)); // *10 for extra precision
+    // 2: target GPS position LAT
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 2, lrintf(ap.targetLocation.lat));
 
-    // 3: angle_target (Final output after PT3 filter, sent to the drone's angle PID controller)
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 3, lrintf(autopilotAngle[activeBFAxis] * 10)); // decidegrees
-    
-    // 4: current Angle (The physical attitude of the drone from the IMU)
-    float currentAngleDeciDegrees = (activeBFAxis == AI_ROLL) ? attitude.values.roll : attitude.values.pitch;
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(currentAngleDeciDegrees)); // in decidegrees
-    
+    // 3: target GPS position LON
+    DEBUG_SET(DEBUG_AUTOPILOT_POSITION, 3, lrintf(ap.targetLocation.lon));
+
+    // 4: PID_sum (Combined P+I+D+A before vector rotation, Earth Frame)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(debugPidSumEF.v[activeEFAxis] * 10)); // *10 for extra precision
+
     // 5: angles BF (Output of Vector Rotate AND Limiter, Body Frame, before PT3)
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 5, lrintf(ap.pidSumBF.v[activeBFAxis] * 10)); // decidegrees
 
