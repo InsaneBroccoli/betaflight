@@ -454,27 +454,27 @@ bool positionControl(void)
     axisEF_e activeEFAxis = posChirpAxisY ? LAT : LON;
     int activeBFAxis = posChirpAxisY ? AI_PITCH : AI_ROLL;
 
-    // 0: GPS_Distance (Error to target in cm)
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(debugGpsDistance.v[activeEFAxis]));
+    // 0: target GPS location
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(ap.targetLocation);
 
-    // 1: PID_sum (Combined P+I+D+A before vector rotation, Earth Frame)
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(debugPidSumEF.v[activeEFAxis] * 10)); // *10 for extra precision
+    // 1: current GPS position
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(gpsSol.llh);
 
-    // 2: angles BF (Output of Vector Rotate AND Limiter, Body Frame, before PT3)
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(ap.pidSumBF.v[activeBFAxis] * 10)); // decidegrees
+    // 2: PID_sum (Combined P+I+D+A before vector rotation, Earth Frame)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(debugPidSumEF.v[activeEFAxis] * 10)); // *10 for extra precision
 
     // 3: angle_target (Final output after PT3 filter, sent to the drone's angle PID controller)
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 3, lrintf(autopilotAngle[activeBFAxis] * 10)); // decidegrees
-
+    
     // 4: current Angle (The physical attitude of the drone from the IMU)
     float currentAngleDeciDegrees = (activeBFAxis == AI_ROLL) ? attitude.values.roll : attitude.values.pitch;
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(currentAngleDeciDegrees)); // already in decidegrees
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(currentAngleDeciDegrees)); // in decidegrees
+    
+    // 5: angles BF (Output of Vector Rotate AND Limiter, Body Frame, before PT3)
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 5, lrintf(ap.pidSumBF.v[activeBFAxis] * 10)); // decidegrees
 
-    // 5: error (angle_target - current Angle)
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 5, lrintf((autopilotAngle[activeBFAxis] * 10) - currentAngleDeciDegrees));
-
-    // 6: The injected Chirp Excitation (so you can see the actual wave pushing the system)
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 6, lrintf(autopilotConfig()->posChirpAmpl * posChirp.exc));
+    // 6: The injected Chirp Excitation
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 6, lrintf(posChirp.sinarg) * 5.0e3f);
 
     // 7: Active Axis Flag (0 = LON/ROLL, 1 = LAT/PITCH) so you know which axis you are looking at in the log
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, posChirpAxisY ? 1 : 0);
