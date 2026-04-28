@@ -455,10 +455,10 @@ bool positionControl(void)
     int activeBFAxis = posChirpAxisY ? AI_PITCH : AI_ROLL;
 
     // 0: target GPS location
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(ap.targetLocation);
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(ap.targetLocation));
 
     // 1: current GPS position
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(gpsSol.llh);
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(gpsSol.llh));
 
     // 2: PID_sum (Combined P+I+D+A before vector rotation, Earth Frame)
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(debugPidSumEF.v[activeEFAxis] * 10)); // *10 for extra precision
