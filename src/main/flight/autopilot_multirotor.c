@@ -449,7 +449,7 @@ bool positionControl(void)
     int activeBFAxis = posChirpAxisY ? AI_PITCH : AI_ROLL;
 
     // 0: GPS error [cm]
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(debugGpsDistance.v[activeEFAxis] * 10))); // *10 for extra precision
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(debugGpsDistance.v[activeEFAxis] * 10)); // *10 for extra precision
 
     // 1: angle_target after PT3 + Limiter
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(autopilotAngle[activeBFAxis] * 10)); // *10 for extra precision

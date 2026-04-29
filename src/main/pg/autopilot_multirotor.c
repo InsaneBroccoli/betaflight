@@ -50,7 +50,7 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .posChirpAmpl = 200,
     .posChirpStartFreqHzDeci = 1,
     .posChirpEndFreqHzDeci = 40,
-    .posChirpSweepTimeSec = 63,
+    .posChirpSweepTimeSec = 75,
     .posChirpYawP = 2,
     .posChirpMaxYawRate = 90,
     .posChirpAlignTolerance = 3
