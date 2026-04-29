@@ -269,7 +269,7 @@ bool positionControl(void)
       }
       // shortes-path heading error to North (0 deg), wrapped to (180, -180]
       const float headingDeg = attitude.values.yaw * 0.1f;
-      float yawErrorDeg = -headingDeg;
+      float yawErrorDeg = headingDeg;
       yawErrorDeg = fmodf(yawErrorDeg + 540, 360) - 180;
       
       // P controller on heading error -> yaw rate (deg), rate limited
