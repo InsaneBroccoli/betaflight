@@ -15,13 +15,11 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pg/autopilot_multirotor.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
 
-#include "io/gps.h"
 #include "platform.h"
 
 #ifndef USE_WING
