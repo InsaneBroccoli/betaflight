@@ -2049,6 +2049,9 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_AP_POS_CHIRP_START_FREQ_HZ_DECI,  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpStartFreqHzDeci) },
     { PARAM_NAME_AP_POS_CHIRP_END_FREQ_HZ_DECI,    VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 2, 1000 },    PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpEndFreqHzDeci) },
     { PARAM_NAME_AP_POS_CHIRP_SWEEP_TIME_SEC,      VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpSweepTimeSec) },
+    { PARAM_NAME_AP_POS_CHIRP_YAW_P,               VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 255 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpYawP) },
+    { PARAM_NAME_AP_POS_CHIRP_MAX_YAW_RATE,        VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 180 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpMaxYawRate) },
+    { PARAM_NAME_AP_POS_CHIRP_ALIGN_TOLERANCE,     VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 1, 30 },     PG_AUTOPILOT, offsetof(autopilotConfig_t, posChirpAlignTolerance) },
   #endif
 #endif // !USE_WING
 

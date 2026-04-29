@@ -15,7 +15,6 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "flight/autopilot_multirotor.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -54,9 +53,6 @@
 #ifdef USE_POSHOLD_CHIRP
 #include "common/chirp.h"
 
-#define POSCHIRP_YAW_P 3.0f // deg/s per heading error
-#define POSCHIRP_MAX_YAW_RATE 90.0f // deg/s
-#define POSCHIRP_ALIGN_TOLERANCE 3.0f // deg
 chirp_t posChirp;
 static bool posChirpAxisY = false;
 static float posChirpYawRate = 0.0f;
@@ -277,10 +273,10 @@ bool positionControl(void)
       yawErrorDeg = fmodf(yawErrorDeg + 540, 360) - 180;
       
       // P controller on heading error -> yaw rate (deg), rate limited
-      posChirpYawRate = constrainf(yawErrorDeg * POSCHIRP_YAW_P, -POSCHIRP_MAX_YAW_RATE, POSCHIRP_MAX_YAW_RATE);
+      posChirpYawRate = constrainf(yawErrorDeg * autopilotConfig()->posChirpYawP, -(autopilotConfig()->posChirpMaxYawRate), autopilotConfig()->posChirpMaxYawRate);
 
       // lock alignment once we drop below tolerance
-      if (!isAlignedNorth && fabsf(yawErrorDeg) <= POSCHIRP_ALIGN_TOLERANCE) {
+      if (!isAlignedNorth && fabsf(yawErrorDeg) <= autopilotConfig()->posChirpAlignTolerance) {
           isAlignedNorth = true;
           chirpReset(&posChirp);
       }
