@@ -450,26 +450,37 @@ bool positionControl(void)
     axisEF_e activeEFAxis = posChirpAxisY ? LAT : LON;
     int activeBFAxis = posChirpAxisY ? AI_PITCH : AI_ROLL;
 
-    // 0: GPS error [cm]
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(debugGpsDistance.v[activeEFAxis] * 10)); // *10 for extra precision
+    // 0: position error post-injection on the active EF axis [cm * 10]
+    //    what the position PID actually sees as its error term, after the chirp has been added in
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 0, lrintf(debugGpsDistance.v[activeEFAxis] * 10));
 
-    // 1: angle_target after PT3 + Limiter
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(autopilotAngle[activeBFAxis] * 10)); // *10 for extra precision
+    // 1: final angle command on the active BF axis after EF->BF rotation, limiter, and PT3 upsample [deg * 10]
+    //    closest signal to "what the drone was actually told to do" in body frame
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 1, lrintf(autopilotAngle[activeBFAxis] * 10));
 
-    // 2: target GPS position LAT
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(ap.targetLocation.lat));
+    // 2: chirp excitation injected into the EF position error [cm * 10]
+    //    sysID INPUT signal: posChirpAmpl * posChirp.exc; same units as slot 0
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 2, lrintf(autopilotConfig()->posChirpAmpl * posChirp.exc * 10));
 
-    // 3: target GPS position LON
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 3, lrintf(ap.targetLocation.lon));
+    // 3: chirp instantaneous frequency [Hz * 100]
+    //    bode plot x-axis; lets analysis bin magnitude/phase per frequency without recomputing from sinarg
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 3, lrintf(posChirp.fchirp * 100));
 
-    // 4: PID_sum EF (Combined P+I+D+A before vector rotation)
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(debugPidSumEF.v[activeEFAxis] * 10)); // *10 for extra precision
+    // 4: position PID sum in earth frame, before BF rotation and PT3 [deg * 10]
+    //    sysID OUTPUT signal: cleanest SISO output of the position controller alone
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(debugPidSumEF.v[activeEFAxis] * 10));
 
-    // 5: The injected Chirp Excitation
+    // 5: chirp phase argument [rad * 5000]
+    //    sawtooth in [0, 2*pi); used as a fine-grained time/phase reference and to gate the active sweep window
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 5, lrintf(posChirp.sinarg * 5.0e3f));
 
-    // 6: Active Axis Flag (0 = LON/ROLL, 1 = LAT/PITCH) so you know which axis you are looking at in the log
+    // 6: active axis flag (0 = LON/ROLL, 1 = LAT/PITCH)
+    //    indicates which earth/body axis the chirp is being applied to in this run
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 6, posChirpAxisY ? 1 : 0);
+
+    // 7: GPS data rate [Hz * 10]
+    //    diagnostic; flat trace = stable rate, dips/jumps = sat dropout or reconfig that warps the chirp time mapping
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, lrintf(getGpsDataFrequencyHz() * 10));
 #endif
 
 
