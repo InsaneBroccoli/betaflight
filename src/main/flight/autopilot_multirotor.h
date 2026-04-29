@@ -31,7 +31,10 @@ void posControlOutput(void);
 bool positionControl(void);
 void altitudeControl(float targetAltitudeCm, float taskIntervalS, float targetAltitudeStep);
 
+#ifdef USE_POSHOLD_CHIRP
 bool posHoldChirpIsFinished(void);
+float posHoldChirpGetYawRate(void);
+#endif
 
 bool isBelowLandingAltitude(void);
 float getAutopilotThrottle(void);

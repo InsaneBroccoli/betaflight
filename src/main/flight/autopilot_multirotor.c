@@ -15,6 +15,7 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "flight/autopilot_multirotor.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -52,10 +53,13 @@
 
 #ifdef USE_POSHOLD_CHIRP
 #include "common/chirp.h"
-#include "flight/imu.h"       // For attitude.values.yaw
-#include "fc/rc.h"            // For rcCommand[YAW]
+
+#define POSCHIRP_YAW_P 3.0f // deg/s per heading error
+#define POSCHIRP_MAX_YAW_RATE 90.0f // deg/s
+#define POSCHIRP_ALIGN_TOLERANCE 3.0f // deg
 chirp_t posChirp;
 static bool posChirpAxisY = false;
+static float posChirpYawRate = 0.0f;
 #endif
 
 static pidCoefficient_t altitudePidCoeffs;
@@ -258,47 +262,41 @@ bool positionControl(void)
     static uint16_t gpsStamp = 0;
 
 #ifdef USE_POSHOLD_CHIRP
-    static bool shouldPosChirpAxisToggle = false;
-    static bool isAlignedToNorth = false;
-    const bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
+  static bool wasChirpActive = false;
+  static bool isAlignedNorth = false;
+  const bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
 
-    if (isPosChirpActive) {
-        if (!shouldPosChirpAxisToggle) {
-            // First time entering the mode (or after toggle)
-            shouldPosChirpAxisToggle = true; 
-            isAlignedToNorth = false; // Require alignment on every new activation
-        }
+  if (isPosChirpActive) {
+      if (!wasChirpActive) {
+          wasChirpActive = true;
+          isAlignedNorth = false;
+      }
+      // shortes-path heading error to North (0 deg), wrapped to (180, -180]
+      const float headingDeg = attitude.values.yaw * 0.1f;
+      float yawErrorDeg = -headingDeg;
+      yawErrorDeg = fmodf(yawErrorDeg + 540, 360) - 180;
+      
+      // P controller on heading error -> yaw rate (deg), rate limited
+      posChirpYawRate = constrainf(yawErrorDeg * POSCHIRP_YAW_P, -POSCHIRP_MAX_YAW_RATE, POSCHIRP_MAX_YAW_RATE);
 
-        // 1. Calculate heading error to North (0 degrees)
-        int16_t heading = DECIDEGREES_TO_DEGREES(attitude.values.yaw);
-        int16_t error = 0 - heading;
-        
-        // Normalize error to -180 to +180
-        if (error <= -180) error += 360;
-        if (error >= 180)  error -= 360;
+      // lock alignment once we drop below tolerance
+      if (!isAlignedNorth && fabsf(yawErrorDeg) <= POSCHIRP_ALIGN_TOLERANCE) {
+          isAlignedNorth = true;
+          chirpReset(&posChirp);
+      }
 
-        // 2. Check if we are close enough to North (within 3 degrees)
-        if ((abs(error) <= 3) && (isAlignedToNorth == false)) {
-            isAlignedToNorth = true;
-            chirpReset(&posChirp);  // Reset chirp to cleanly start at t=0
-        }
-        // 3. Command the drone to yaw towards North (Simple Proportional Controller)
-        // The multiplier acts as P-gain. Adjust '3' if it rotates too slow/fast
-        rcCommand[YAW] = error * 3;
-
-        // Only execute the chirp generator if we have finished aligning
-        if (isAlignedToNorth) {
-            posChirpUpdate(&posChirp);
-        }
-    } else {
-        if (shouldPosChirpAxisToggle) {
-            // The switch was just turned off: toggle the axis and reset generator
-            shouldPosChirpAxisToggle = false;
-            posChirpAxisY = !posChirpAxisY; 
-            isAlignedToNorth = false; 
-            chirpReset(&posChirp);
-        }
-    }
+      if (isAlignedNorth) {
+          posChirpUpdate(&posChirp);
+      }
+  } else {
+      if (wasChirpActive) {
+          wasChirpActive = false;
+          posChirpAxisY = !posChirpAxisY;
+          isAlignedNorth = false;
+          chirpReset(&posChirp);
+      }
+      posChirpYawRate = 0.0f;
+  }
 #endif
 
     if (gpsHasNewData(&gpsStamp)) {
@@ -510,6 +508,11 @@ bool isAutopilotInControl(void)
 bool posHoldChirpIsFinished(void) {
     return posChirp.isFinished;
 }
+
+float posHoldChirpGetYawRate(void) {
+  return posChirpYawRate;
+}
 #endif
+
 
 #endif // !USE_WING

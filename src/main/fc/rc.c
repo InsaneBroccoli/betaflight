@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "common/axis.h"
 #include "platform.h"
 
 #include "build/debug.h"
@@ -53,6 +54,11 @@
 #include "sensors/gyro.h"
 
 #include "rc.h"
+
+#ifdef USE_POSHOLD_CHIRP
+#include "flight/autopilot_multirotor.h"
+#endif
+
 
 #define RX_INTERVAL_MIN_US     800 // 0.800ms to fit 1kHz without an issue often 1khz rc comes in at 880us or so
 #define RX_INTERVAL_MAX_US   65500 // 65.5ms or 15.26hz
@@ -648,6 +654,13 @@ FAST_CODE void processRcCommand(void)
                 // pid controller with the value calculated from the desired heading logic.
                 angleRate = gpsRescueGetYawRate();
                 // Treat the stick input as centered to avoid any stick deflection base modifications (like acceleration limit)
+                rcDeflection[axis] = 0;
+                rcDeflectionAbs[axis] = 0;
+            } else
+#endif
+#ifdef USE_POSHOLD_CHIRP
+            if ((axis == FD_YAW) && FLIGHT_MODE(POSHOLD_CHIRP_MODE)) {
+                angleRate = posHoldChirpGetYawRate();
                 rcDeflection[axis] = 0;
                 rcDeflectionAbs[axis] = 0;
             } else
