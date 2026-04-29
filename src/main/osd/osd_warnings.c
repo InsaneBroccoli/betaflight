@@ -66,6 +66,7 @@
 #include "sensors/adcinternal.h"
 #include "sensors/battery.h"
 #include "sensors/sensors.h"
+#include "sensors/compass.h"
 
 const char CRASHFLIP_WARNING[] = ">CRASH FLIP<";
 
@@ -448,6 +449,19 @@ void renderOsdWarning(char *warningText, bool *blinking, uint8_t *displayAttr)
 #endif // USE_CHIRP
 
 #ifdef USE_POSHOLD_CHIRP
+    // Heading reference unreliable while chirp is requested
+    if (FLIGHT_MODE(POSHOLD_CHIRP_MODE)
+#ifdef USE_MAG
+        && !compassIsHealthy()
+#endif
+       ) {
+        tfp_sprintf(warningText, "PCHRP NO MAG");
+        *displayAttr = DISPLAYPORT_SEVERITY_WARNING;
+        *blinking = true;
+        return;
+    
+    }
+
     // Visual info that chirp excitation is finished
     if (posHoldChirpIsFinished()) {
         tfp_sprintf(warningText, "PCHRP EXC FINISHED");
