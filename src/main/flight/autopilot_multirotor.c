@@ -15,11 +15,13 @@
  * along with Betaflight. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "pg/autopilot_multirotor.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
 
+#include "io/gps.h"
 #include "platform.h"
 
 #ifndef USE_WING
@@ -278,12 +280,13 @@ bool positionControl(void)
       // lock alignment once we drop below tolerance
       if (!isAlignedNorth && fabsf(yawErrorDeg) <= autopilotConfig()->posChirpAlignTolerance) {
           isAlignedNorth = true;
-          chirpReset(&posChirp);
+          chirpInit(&posChirp,
+                    autopilotConfig()->posChirpStartFreqHzDeci / 10.0f,
+                    autopilotConfig()->posChirpEndFreqHzDeci / 10.0f,
+                    autopilotConfig()->posChirpSweepTimeSec, 
+                    (uint32_t)(getGpsDataIntervalSeconds() * 1e6f));
       }
 
-      if (isAlignedNorth) {
-          posChirpUpdate(&posChirp);
-      }
   } else {
       if (wasChirpActive) {
           wasChirpActive = false;
@@ -304,8 +307,9 @@ bool positionControl(void)
         GPS_distance2d(&gpsSol.llh, &ap.targetLocation, &gpsDistance); // X is EW/lon, Y is NS/lat
 
 #ifdef USE_POSHOLD_CHIRP
-        if (isPosChirpActive) {
+        if (isPosChirpActive && isAlignedNorth) {
             // Apply latest excitation to the distance error so the PID chases the chirp wave
+            posChirpUpdate(&posChirp);
             const float currentExcitation = autopilotConfig()->posChirpAmpl * posChirp.exc;
             if (!posChirpAxisY) {
                 gpsDistance.v[LON] += currentExcitation;
