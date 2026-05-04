@@ -23,4 +23,5 @@ FLAGS=(
   -DUSE_ALTHOLD_CHIRP
 )
 
-make MATEKH743 EXTRA_FLAGS="${FLAGS[*]}"
+make clean
+bear -- make MATEKH743 EXTRA_FLAGS="${FLAGS[*]}" -j$(nproc)
