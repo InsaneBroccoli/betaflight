@@ -1,6 +1,7 @@
 # custom defines
 .env
 compile_commands.json
+commands_IFLIGHT.sh
 
 *.o
 .DS_Store
