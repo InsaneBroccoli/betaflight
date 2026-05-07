@@ -141,11 +141,6 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
     }
 
 #ifdef USE_POSHOLD_CHIRP
-    chirpInit(&posChirp,
-              autopilotConfig()->posChirpStartFreqHzDeci / 10.0f,
-              autopilotConfig()->posChirpEndFreqHzDeci / 10.0f,
-              autopilotConfig()->posChirpSweepTimeSec,
-              (uint32_t)(1000000.0f / taskRateHz)); // convert Hz to looptime in microseconds
     posChirpAxisY = false; // Always start with LON (X/East) axis when position hold is activated
 #endif
 
@@ -281,8 +276,8 @@ bool positionControl(void)
           isAlignedNorth = true;
           posChirpResetPending = true;
           chirpInit(&posChirp,
-                    autopilotConfig()->posChirpStartFreqHzDeci / 10.0f,
-                    autopilotConfig()->posChirpEndFreqHzDeci / 10.0f,
+                    autopilotConfig()->posChirpStartFreqHzCenti / 100.0f,
+                    autopilotConfig()->posChirpEndFreqHzCenti / 100.0f,
                     autopilotConfig()->posChirpSweepTimeSec, 
                     (uint32_t)(getGpsDataIntervalSeconds() * 1e6f));
       }
@@ -481,9 +476,9 @@ bool positionControl(void)
     //    bode plot x-axis; lets analysis bin magnitude/phase per frequency without recomputing from sinarg
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 3, lrintf(posChirp.fchirp * 100));
 
-    // 4: BF angle command on the NON-chirped axis [deg * 10] — decoupling sanity check.
-    //    Should hover near zero if the BF->EF pre-rotation + downstream EF->BF rotation cancel.
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(autopilotAngle[otherBFAxis] * 10));
+    // 4: position PID sum in earth frame, before BF rotation and PT3 [deg * 10]
+    //    sysID OUTPUT signal: cleanest SISO output of the position controller alone
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 4, lrintf(debugPidSumEF.v[activeEFAxis] * 10));
 
     // 5: chirp phase argument [rad * 5000]
     //    sawtooth in [0, 2*pi); used as a fine-grained time/phase reference and to gate the active sweep window
@@ -493,9 +488,9 @@ bool positionControl(void)
     //    indicates which earth/body axis the chirp is being applied to in this run
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 6, posChirpAxisY ? 1 : 0);
 
-    // 7: GPS data rate [Hz * 10]
-    //    diagnostic; flat trace = stable rate, dips/jumps = sat dropout or reconfig that warps the chirp time mapping
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, lrintf(getGpsDataFrequencyHz() * 10));
+    // 7: BF angle command on the NON-chirped axis [deg * 10] — decoupling sanity check.
+    //    Should hover near zero if the BF->EF pre-rotation + downstream EF->BF rotation cancel.
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, lrintf(autopilotAngle[otherBFAxis] * 10));
 #endif
 
 

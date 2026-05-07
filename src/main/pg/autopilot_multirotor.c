@@ -30,7 +30,7 @@
 
 #include "autopilot.h"
 
-PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 4);
+PG_REGISTER_WITH_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig, PG_AUTOPILOT, 5);
 
 PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .landingAltitudeM = 4,
@@ -48,8 +48,8 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .positionCutoff = 80,
     .maxAngle = 50,
     .posChirpAmpl = 100,
-    .posChirpStartFreqHzDeci = 0.5,
-    .posChirpEndFreqHzDeci = 30,
+    .posChirpStartFreqHzCenti = 5,
+    .posChirpEndFreqHzCenti = 300,
     .posChirpSweepTimeSec = 75,
     .posChirpYawP = 2,
     .posChirpMaxYawRate = 90,

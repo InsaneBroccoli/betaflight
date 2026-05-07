@@ -43,8 +43,8 @@ typedef struct autopilotConfig_s {
     uint8_t positionCutoff;
     uint8_t maxAngle;
     uint16_t posChirpAmpl;
-    uint8_t posChirpStartFreqHzDeci;
-    uint16_t posChirpEndFreqHzDeci;
+    uint8_t posChirpStartFreqHzCenti;
+    uint16_t posChirpEndFreqHzCenti;
     uint8_t posChirpSweepTimeSec;
     uint8_t posChirpYawP;
     uint8_t posChirpMaxYawRate;

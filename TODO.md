@@ -5,9 +5,20 @@ testing; pick up before opening an upstream PR.
 
 ## Pre-flight verification
 
-- [ ] **Compile for IFLIGHT_F722_TWING with `USE_POSHOLD_CHIRP`** via
-      `build_IFLIGHT.sh`. Has not been run since the BF-chirp redesign
-      (steps 1–6 of the rotation rework).
+- [ ] **Bench-test the centi-Hz fix** (PG v5, 2026-05-05). Rebuild for
+      IFLIGHT_F722_TWING with `USE_POSHOLD_CHIRP` via `build_IFLIGHT.sh`,
+      reflash (PG version bumped from 4 → 5, so defaults reload), engage
+      POSHOLD then POSHOLD_CHIRP. After the 1s settle, confirm
+      `DEBUG_POSHOLD_CHIRP` slot 3 (`fchirp`) sweeps from ~0.05 Hz toward
+      end freq, slot 2 (`posChirpAmpl·exc`) is a sweeping sinusoid, and
+      slot 1 (BF angle on chirped axis) follows it.
+
+- [ ] **Investigate GPS rate fluctuation.** User observed the GPS data rate
+      is not stable in flight (2026-05-05). The chirp time mapping assumes
+      a stable rate (passed once to `chirpInit` at mode entry); fluctuation
+      will warp `fchirp` vs. wall-clock. Decide whether to (a) re-init the
+      chirp on rate change, (b) document the inaccuracy, or (c) gate chirp
+      start on a stability check.
 
 ## Code style / cleanup
 
@@ -50,8 +61,3 @@ testing; pick up before opening an upstream PR.
       sysID data. Promote to a hard gate on chirp init, or at minimum document
       the risk.
 
-## Cleanup once design is stable
-
-- [ ] **Drop `posChirpAlignTolerance` from the PG.** No longer used — the
-      alignment gate it controlled was removed in step 1 of the redesign.
-      Requires a PG version bump.
