@@ -255,11 +255,13 @@ bool positionControl(void)
     static uint16_t gpsStamp = 0;
     
     float debug_mag = 0.0f; // for debug to see if we get into D and A angle limit
+    static float appliedPosChirpExcitation = 0.0f;
 
 #ifdef USE_POSHOLD_CHIRP
     static bool wasChirpActive = false;
     static bool isAligned = false;
     static bool posChirpResetPending = false;
+    static phaseComp_t posChirpFilter;
     const bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
 
     if (isPosChirpActive) {
@@ -286,6 +288,15 @@ bool positionControl(void)
                       autopilotConfig()->posChirpEndFreqHzCenti / 100.0f,
                       autopilotConfig()->posChirpSweepTimeSec, 
                       (uint32_t)(getGpsDataIntervalSeconds() * 1e6f));
+
+            const float lagFreqHz = autopilotConfig()->posChirpLagFreqHzCenti / 100.0f;
+            const float leadFreqHz = autopilotConfig()->posChirpLeadFreqHzCenti / 100.0f;
+
+            const float alpha = leadFreqHz / lagFreqHz;
+            const float centerFreqHz = lagFreqHz * sqrtf(alpha);
+            const float centerPhaseDeg = asinf((1.0f - alpha) / (1.0f + alpha)) / RAD;
+
+            phaseCompInit(&posChirpFilter, centerFreqHz, centerPhaseDeg, (uint32_t)(getGpsDataIntervalSeconds() * 1e6f));
         }
 
     } else {
@@ -324,11 +335,14 @@ bool positionControl(void)
             }
         
             posChirpUpdate(&posChirp);
-            const float currentExcitation = autopilotConfig()->posChirpAmpl * posChirp.exc;
+            float filteredChirp = phaseCompApply(&posChirpFilter, posChirp.exc);
+
+            appliedPosChirpExcitation = autopilotConfig()->posChirpAmpl * filteredChirp;
+            
             if (!posChirpAxisY) {
-                gpsDistance.v[LON] += currentExcitation;
+                gpsDistance.v[LON] += appliedPosChirpExcitation;
             } else {
-                gpsDistance.v[LAT] += currentExcitation;
+                gpsDistance.v[LAT] += appliedPosChirpExcitation;
             }
         }
 #endif

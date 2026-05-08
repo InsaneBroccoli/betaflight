@@ -53,7 +53,9 @@ PG_RESET_TEMPLATE(autopilotConfig_t, autopilotConfig,
     .posChirpSweepTimeSec = 75,
     .posChirpYawP = 2,
     .posChirpMaxYawRate = 90,
-    .posChirpAlignTolerance = 3
+    .posChirpAlignTolerance = 3,
+    .posChirpLagFreqHzCenti = 170,
+    .posChirpLeadFreqHzCenti = 30
 );
 
 #endif // !USE_WING
