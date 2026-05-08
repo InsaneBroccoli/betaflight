@@ -253,6 +253,8 @@ bool positionControl(void)
     static vector2_t debugGpsDistance = { 0 };     // keep last calculated distance for DEBUG
     static vector2_t debugPidSumEF = { 0 };        // and last pidsum in EF
     static uint16_t gpsStamp = 0;
+    
+    float debug_mag = 0.0f; // for debug to see if we get into D and A angle limit
 
 #ifdef USE_POSHOLD_CHIRP
     static bool wasChirpActive = false;
@@ -416,6 +418,7 @@ bool positionControl(void)
             // note: an angle of more than 35 degrees can still be achieved as P and I grow
             const float maxDAAngle = 35.0f; // D+A limit in degrees; arbitrary angle
             const float mag = vector2Norm(&pidDA);
+            debug_mag = mag;
             if (mag > maxDAAngle) {
                 vector2Scale(&pidDA, &pidDA, maxDAAngle / mag);
             }
@@ -493,9 +496,12 @@ bool positionControl(void)
     //    indicates which earth/body axis the chirp is being applied to in this run
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 6, posChirpAxisY ? 1 : 0);
 
-    // 7: GPS frequency throughout the chirp [Hz]
-    //    surfaces GPS rate fluctuation that could warp the chirp time mapping during analysis
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, lrintf(getGpsDataFrequencyHz()));
+    // // 7: GPS frequency throughout the chirp [Hz]
+    // //    surfaces GPS rate fluctuation that could warp the chirp time mapping during analysis
+    // DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, lrintf(getGpsDataFrequencyHz()));
+    // 7: D+A magnitude (pidDA vector norm) [degrees]
+    //    represents the limiting constraint on D and A contribution
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, lrintf(debug_mag * 10));
 #endif
 
 
