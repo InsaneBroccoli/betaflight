@@ -55,6 +55,7 @@
 
 chirp_t posChirp;
 static bool posChirpAxisY = false;
+static unsigned chirpCount = 0;
 static float posChirpYawRate = 0.0f;
 #endif
 
@@ -142,6 +143,7 @@ void resetPositionControl(const gpsLocation_t *initialTargetLocation, unsigned t
 
 #ifdef USE_POSHOLD_CHIRP
     posChirpAxisY = false; // Always start with LON (X/East) axis when position hold is activated
+    chirpCount = 0; // always head north
 #endif
 
     const float taskInterval = 1.0f / taskRateHz;
@@ -253,44 +255,47 @@ bool positionControl(void)
     static uint16_t gpsStamp = 0;
 
 #ifdef USE_POSHOLD_CHIRP
-  static bool wasChirpActive = false;
-  static bool isAlignedNorth = false;
-  static bool posChirpResetPending = false;
-  const bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
+    static bool wasChirpActive = false;
+    static bool isAligned = false;
+    static bool posChirpResetPending = false;
+    const bool isPosChirpActive = FLIGHT_MODE(POSHOLD_CHIRP_MODE);
 
-  if (isPosChirpActive) {
-      if (!wasChirpActive) {
-          wasChirpActive = true;
-          isAlignedNorth = false;
-      }
-      // shortes-path heading error to North (0 deg), wrapped to (180, -180]
-      const float headingDeg = attitude.values.yaw * 0.1f;
-      float yawErrorDeg = headingDeg;
-      yawErrorDeg = fmodf(yawErrorDeg + 540, 360) - 180;
-      
-      // P controller on heading error -> yaw rate (deg), rate limited
-      posChirpYawRate = constrainf(yawErrorDeg * autopilotConfig()->posChirpYawP, -(autopilotConfig()->posChirpMaxYawRate), autopilotConfig()->posChirpMaxYawRate);
+    if (isPosChirpActive) {
+        if (!wasChirpActive) {
+            wasChirpActive = true;
+            isAligned = false;
+        }
+        // shortest-path heading error to North (0 deg) or +45 deg on the second phase of chirps, wrapped to (-180, 180]
+        const float headingDeg = attitude.values.yaw * 0.1f;
+        float yawErrorDeg = ((chirpCount >> 1) & 1) ? (headingDeg - 45): headingDeg;
+        yawErrorDeg = fmodf(yawErrorDeg + 540, 360) - 180;
+        
+        // P controller on heading error -> yaw rate (deg/s), rate limited
+        posChirpYawRate = constrainf(yawErrorDeg * autopilotConfig()->posChirpYawP,
+                                    -(autopilotConfig()->posChirpMaxYawRate),
+                                    autopilotConfig()->posChirpMaxYawRate);
 
-      // lock alignment once we drop below tolerance
-      if (!isAlignedNorth && fabsf(yawErrorDeg) <= autopilotConfig()->posChirpAlignTolerance) {
-          isAlignedNorth = true;
-          posChirpResetPending = true;
-          chirpInit(&posChirp,
-                    autopilotConfig()->posChirpStartFreqHzCenti / 100.0f,
-                    autopilotConfig()->posChirpEndFreqHzCenti / 100.0f,
-                    autopilotConfig()->posChirpSweepTimeSec, 
-                    (uint32_t)(getGpsDataIntervalSeconds() * 1e6f));
-      }
+        // lock alignment once we drop below tolerance
+        if (!isAligned && fabsf(yawErrorDeg) <= autopilotConfig()->posChirpAlignTolerance) {
+            isAligned = true;
+            posChirpResetPending = true;
+            chirpInit(&posChirp,
+                      autopilotConfig()->posChirpStartFreqHzCenti / 100.0f,
+                      autopilotConfig()->posChirpEndFreqHzCenti / 100.0f,
+                      autopilotConfig()->posChirpSweepTimeSec, 
+                      (uint32_t)(getGpsDataIntervalSeconds() * 1e6f));
+        }
 
-  } else {
-      if (wasChirpActive) {
-          wasChirpActive = false;
-          posChirpAxisY = !posChirpAxisY;
-          isAlignedNorth = false;
-          chirpReset(&posChirp);
-      }
-      posChirpYawRate = 0.0f;
-  }
+    } else {
+        if (wasChirpActive) {
+            wasChirpActive = false;
+            posChirpAxisY = !posChirpAxisY;
+            isAligned = false;
+            chirpCount++;
+            chirpReset(&posChirp);
+        }
+        posChirpYawRate = 0.0f;
+    }
 #endif
 
     if (gpsHasNewData(&gpsStamp)) {
@@ -302,7 +307,7 @@ bool positionControl(void)
         GPS_distance2d(&gpsSol.llh, &ap.targetLocation, &gpsDistance); // X is EW/lon, Y is NS/lat
 
 #ifdef USE_POSHOLD_CHIRP
-        if (isPosChirpActive && isAlignedNorth) {
+        if (isPosChirpActive && isAligned) {
             // Apply latest excitation to the distance error so the PID chases the chirp wave
             if (posChirpResetPending) {
                 posChirpResetPending = false;
@@ -454,11 +459,11 @@ bool positionControl(void)
     }
 
 #ifdef USE_POSHOLD_CHIRP
-    // Because the drone aligns to North, LON (East/West) maps to ROLL, and LAT (North/South) maps to PITCH.
+    // At 0 deg heading: LON (East/West) maps cleanly to ROLL and LAT (North/South) maps cleanly to PITCH.
+    // At 45 deg heading: a single EF axis injection projects equally onto BOTH BF roll and pitch.
     // We dynamically select the active axis based on what the chirp generator is targeting.
     axisEF_e activeEFAxis = posChirpAxisY ? LAT : LON;
     int activeBFAxis = posChirpAxisY ? AI_PITCH : AI_ROLL;
-    int otherBFAxis = posChirpAxisY ? AI_ROLL : AI_PITCH;
 
     // 0: position error post-injection on the active EF axis [cm * 10]
     //    what the position PID actually sees as its error term, after the chirp has been added in
@@ -488,9 +493,9 @@ bool positionControl(void)
     //    indicates which earth/body axis the chirp is being applied to in this run
     DEBUG_SET(DEBUG_POSHOLD_CHIRP, 6, posChirpAxisY ? 1 : 0);
 
-    // 7: BF angle command on the NON-chirped axis [deg * 10] — decoupling sanity check.
-    //    Should hover near zero if the BF->EF pre-rotation + downstream EF->BF rotation cancel.
-    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, lrintf(autopilotAngle[otherBFAxis] * 10));
+    // 7: GPS frequency throughout the chirp [Hz]
+    //    surfaces GPS rate fluctuation that could warp the chirp time mapping during analysis
+    DEBUG_SET(DEBUG_POSHOLD_CHIRP, 7, lrintf(getGpsDataFrequencyHz()));
 #endif
 
 
