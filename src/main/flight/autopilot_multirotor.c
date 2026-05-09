@@ -53,6 +53,8 @@
 #ifdef USE_POSHOLD_CHIRP
 #include "common/chirp.h"
 
+#define POS_CHIRP_LOOPTIME_US 50000 // 20 Hz
+
 chirp_t posChirp;
 static bool posChirpAxisY = false;
 static unsigned chirpCount = 0;
@@ -287,7 +289,7 @@ bool positionControl(void)
                       autopilotConfig()->posChirpStartFreqHzCenti / 100.0f,
                       autopilotConfig()->posChirpEndFreqHzCenti / 100.0f,
                       autopilotConfig()->posChirpSweepTimeSec, 
-                      (uint32_t)(getGpsDataIntervalSeconds() * 1e6f));
+                      POS_CHIRP_LOOPTIME_US);
 
             const float lagFreqHz = autopilotConfig()->posChirpLagFreqHzCenti / 100.0f;
             const float leadFreqHz = autopilotConfig()->posChirpLeadFreqHzCenti / 100.0f;
