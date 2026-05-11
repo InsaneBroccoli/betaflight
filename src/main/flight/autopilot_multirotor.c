@@ -291,8 +291,8 @@ bool positionControl(void)
                       autopilotConfig()->posChirpSweepTimeSec, 
                       POS_CHIRP_LOOPTIME_US);
 
-            const float lagFreqHz = autopilotConfig()->posChirpLagFreqHzCenti / 100.0f;
-            const float leadFreqHz = autopilotConfig()->posChirpLeadFreqHzCenti / 100.0f;
+            const float lagFreqHz = autopilotConfig()->posChirpLagFreqHzDeci / 10.0f;
+            const float leadFreqHz = autopilotConfig()->posChirpLeadFreqHzDeci / 10.0f;
 
             const float alpha = leadFreqHz / lagFreqHz;
             const float centerFreqHz = lagFreqHz * sqrtf(alpha);

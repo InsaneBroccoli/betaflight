@@ -49,8 +49,8 @@ typedef struct autopilotConfig_s {
     uint8_t posChirpYawP;
     uint8_t posChirpMaxYawRate;
     uint8_t posChirpAlignTolerance;
-    uint8_t posChirpLagFreqHzCenti;
-    uint8_t posChirpLeadFreqHzCenti;
+    uint8_t posChirpLagFreqHzDeci;
+    uint8_t posChirpLeadFreqHzDeci;
 } autopilotConfig_t;
 
 PG_DECLARE(autopilotConfig_t, autopilotConfig);
